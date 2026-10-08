@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fbf6e6">
+<title>Блокнот задач</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#fbf6e6;
+    --line:#d9e2ec;
+    --margin:#e8a5a5;
+    --ink:#2f3542;
+    --muted:#8a8f98;
+    --accent:#3b6ea5;
+    --danger:#c0504d;
+    --row:48px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0}
+  body{
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;
+    color:var(--ink);
+    background-color:var(--paper);
+    background-image:
+      linear-gradient(to right, transparent 46px, var(--margin) 46px, var(--margin) 48px, transparent 48px),
+      repeating-linear-gradient(to bottom, transparent 0, transparent calc(var(--row) - 1px), var(--line) calc(var(--row) - 1px), var(--line) var(--row));
+    background-attachment:local;
+    min-height:100vh;
+    padding:env(safe-area-inset-top) 0 calc(80px + env(safe-area-inset-bottom));
+  }
+  .wrap{max-width:640px;margin:0 auto;padding:0 12px 0 0}
+
+  header{padding:18px 16px 8px 62px}
+  h1{font-size:22px;margin:0 0 10px;font-weight:600;letter-spacing:.3px}
+  .progress-text{font-size:14px;color:var(--muted);margin-bottom:6px}
+  .bar{height:5px;background:rgba(0,0,0,.08);border-radius:3px;overflow:hidden}
+  .bar>i{display:block;height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .35s ease}
+
+  .add{display:flex;align-items:center;gap:6px;min-height:var(--row);padding:0 0 0 62px;margin-top:14px;flex-wrap:wrap}
+  .add input[type=text]{
+    flex:1 1 160px;min-width:0;height:44px;font:inherit;font-size:16px;color:var(--ink);
+    border:none;border-bottom:1.5px dashed #b7bec9;background:transparent;outline:none;padding:0 4px;
+  }
+  .add input[type=text]:focus{border-bottom-color:var(--accent)}
+  .chk{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--muted);min-height:44px;cursor:pointer;user-select:none}
+  .chk input{width:22px;height:22px;accent-color:var(--accent)}
+  .btn{
+    min-width:44px;height:44px;border:none;border-radius:12px;background:transparent;font-size:20px;cursor:pointer;color:var(--ink);
+    display:inline-flex;align-items:center;justify-content:center;padding:0 10px;font-family:inherit;
+  }
+  .btn:active{background:rgba(0,0,0,.08)}
+  .btn.primary{background:var(--accent);color:#fff;font-size:15px;font-weight:600;padding:0 16px}
+  .btn.primary:active{filter:brightness(.9)}
+  .btn.small{font-size:16px}
+  .btn[disabled]{opacity:.3;pointer-events:none}
+
+  ul{list-style:none;margin:0;padding:0}
+  li.task{
+    display:flex;align-items:center;gap:2px;min-height:var(--row);padding:0 0 0 8px;
+  }
+  .dot{
+    flex:0 0 40px;width:40px;height:44px;border:none;background:transparent;cursor:pointer;
+    font-size:28px;line-height:1;color:var(--accent);display:flex;align-items:center;justify-content:center;font-family:inherit;
+  }
+  .dot .tick{display:none;font-size:20px;font-weight:700}
+  li.done .dot .b{display:none}
+  li.done .dot .tick{display:inline}
+  .body{flex:1;min-width:0;padding:4px 4px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;cursor:pointer;line-height:1.3}
+  .text,h1,.edit input[type=text]{font-family:"Lilita One","Arial Rounded MT Bold","Chalkboard SE","Comic Sans MS",system-ui,sans-serif;font-weight:400}
+  .text{font-size:21px;letter-spacing:.6px;word-break:break-word}
+  .ch{color:var(--c,#3b6ea5);text-shadow:1px 1px 0 #2a2350,2px 2px 0 #2a2350,3px 3px 0 rgba(42,35,80,.35)}
+  h1{font-size:30px;letter-spacing:1px;margin:0}
+  .head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+  .btn.editmode{font-size:15px;font-weight:600;border:1.5px solid var(--accent);color:var(--accent);height:40px;white-space:nowrap;background:rgba(255,255,255,.5)}
+  .btn.editmode.on{background:var(--accent);color:#fff}
+  .add[hidden]{display:none}
+  h1 .ch{animation:none}
+  .w{display:inline-block;white-space:nowrap}
+  .ch{display:inline-block;white-space:pre;animation:dance 2.6s ease-in-out infinite;animation-delay:calc(var(--i) * -0.18s)}
+  @keyframes dance{
+    0%,100%{transform:translateY(0)}
+    25%{transform:translateY(-1.6px)}
+    75%{transform:translateY(1.4px)}
+  }
+  li.editing .ch{animation:none}
+  li.done .text{opacity:.45}
+  li.done .ch{text-decoration:line-through;text-decoration-thickness:1.5px}
+  .badge{font-size:12px;background:#e4eefb;color:var(--accent);border-radius:10px;padding:2px 8px;white-space:nowrap}
+  li.done .badge{opacity:.5}
+  .tools{display:flex;flex:0 0 auto}
+  .tools .btn{min-width:38px;padding:0 4px;font-size:16px;color:#6b7280}
+
+  .edit{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;padding:6px 0}
+  .edit input[type=text]{
+    width:100%;height:44px;font:inherit;font-size:17px;color:var(--ink);
+    border:none;border-bottom:1.5px solid var(--accent);background:rgba(255,255,255,.6);outline:none;padding:0 6px;border-radius:6px 6px 0 0;
+  }
+  .edit .row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+  .empty{padding:0 16px 0 62px;line-height:var(--row);color:var(--muted)}
+
+  .trash-box{margin:var(--row) 0 0;padding:0 0 0 62px}
+  .trash-box summary{cursor:pointer;color:var(--muted);font-size:14px;min-height:44px;display:flex;align-items:center;list-style:none}
+  .trash-box summary::-webkit-details-marker{display:none}
+  .trash-item{display:flex;align-items:center;gap:6px;min-height:var(--row);font-size:15px;color:var(--muted)}
+  .trash-item span{flex:1;min-width:0;text-decoration:line-through;word-break:break-word}
+  .trash-actions{display:flex;gap:4px;margin-bottom:8px}
+  .link{background:none;border:none;color:var(--accent);font:inherit;font-size:14px;cursor:pointer;min-height:44px;padding:0 6px}
+
+  .toast{
+    position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,120px);
+    background:#2f3542;color:#fff;border-radius:14px;padding:6px 6px 6px 16px;display:flex;align-items:center;gap:6px;
+    box-shadow:0 6px 24px rgba(0,0,0,.25);transition:transform .3s ease;z-index:10;max-width:92vw;font-size:15px;
+  }
+  .toast.show{transform:translate(-50%,0)}
+  .toast button{background:transparent;border:none;color:#9cc7ff;font:inherit;font-weight:600;min-height:44px;padding:0 12px;cursor:pointer}
+
+  @media (prefers-reduced-motion:reduce){ .ch{animation:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="head">
+      <h1>Мои задачи</h1>
+      <button type="button" class="btn editmode" id="editModeBtn" aria-expanded="false">✎ Редактировать</button>
+    </div>
+    <div class="progress-text" id="ptext">Выполнено: 0 из 0 (0%)</div>
+    <div class="bar"><i id="pbar"></i></div>
+  </header>
+
+  <form class="add" id="addForm" autocomplete="off" hidden>
+    <input type="text" id="newText" placeholder="Новая задача…" maxlength="200" enterkeyhint="done">
+    <label class="chk"><input type="checkbox" id="newDaily"> 🔄 Ежедневная</label>
+    <button class="btn primary" type="submit">Добавить</button>
+  </form>
+
+  <ul id="list"></ul>
+
+  <details class="trash-box" id="trashBox" hidden>
+    <summary id="trashSummary">Недавно удалённые</summary>
+    <div id="trashList"></div>
+  </details>
+</div>
+
+<div class="toast" id="toast"><span id="toastMsg"></span><button id="toastUndo">Отменить</button></div>
+
+<script>
+(function(){
+  var KEY='notebook_todo_v1';
+  var state={tasks:[],trash:[]};
+  var editingId=null;
+  var toastTimer=null, lastDeleted=null;
+
+  function load(){
+    try{
+      var raw=localStorage.getItem(KEY);
+      if(raw){var d=JSON.parse(raw); if(d&&Array.isArray(d.tasks)){state.tasks=d.tasks;state.trash=Array.isArray(d.trash)?d.trash:[];}}
+    }catch(e){}
+  }
+  function save(){
+    try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}
+  }
+  function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+  function idx(id){for(var i=0;i<state.tasks.length;i++)if(state.tasks[i].id===id)return i;return -1;}
+
+  var $=function(id){return document.getElementById(id);};
+  var listEl=$('list');
+
+  function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;}
+
+  var PALETTE=['#2fa8f5','#ff6fb5','#1e9e57','#b583ff','#ffbf1f','#ff4d4d','#ff8a2b'];
+  function dancing(text){
+    var frag=document.createDocumentFragment(), i=0;
+    text.split(/(\s+)/).forEach(function(part){
+      if(!part)return;
+      if(/^\s+$/.test(part)){frag.appendChild(document.createTextNode(' '));return;}
+      var w=el('span','w');
+      Array.from(part).forEach(function(c){
+        var s=el('span','ch',c); s.style.setProperty('--i',i); s.style.setProperty('--c',PALETTE[i%PALETTE.length]); i++; w.appendChild(s);
+      });
+      frag.appendChild(w);
+    });
+    return frag;
+  }
+
+  function btn(label,title,onclick,cls){
+    var b=el('button','btn '+(cls||''),label);
+    b.type='button'; b.title=title; b.setAttribute('aria-label',title);
+    b.addEventListener('click',function(e){e.stopPropagation();onclick();});
+    return b;
+  }
+
+  function render(){
+    listEl.innerHTML='';
+    if(!state.tasks.length){
+      listEl.appendChild(el('div','empty','Пока пусто — добавьте первую задачу ✍️'));
+    }
+    state.tasks.forEach(function(t,i){
+      var li=el('li','task'+(t.done?' done':'')+(editingId===t.id?' editing':''));
+
+      var dot=el('button','dot');
+      dot.type='button';
+      dot.setAttribute('aria-label',t.done?'Снять отметку':'Отметить выполненной');
+      dot.appendChild(el('span','b','•'));
+      dot.appendChild(el('span','tick','✓'));
+      dot.addEventListener('click',function(){toggle(t.id);});
+      li.appendChild(dot);
+
+      if(editingId===t.id){
+        li.appendChild(buildEditor(t));
+      }else{
+        var body=el('div','body');
+        var text=el('span','text'); text.appendChild(dancing(t.text));
+        body.appendChild(text);
+        if(t.daily)body.appendChild(el('span','badge','🔄 Ежедневно'));
+        body.addEventListener('click',function(){toggle(t.id);});
+        li.appendChild(body);
+
+        var tools=el('div','tools');
+        var up=btn('▲','Выше',function(){move(t.id,-1);},'small'); if(i===0)up.disabled=true;
+        var dn=btn('▼','Ниже',function(){move(t.id,1);},'small'); if(i===state.tasks.length-1)dn.disabled=true;
+        tools.appendChild(up);tools.appendChild(dn);
+        tools.appendChild(btn('✎','Редактировать',function(){startEdit(t.id);}));
+        tools.appendChild(btn('🗑','Удалить',function(){remove(t.id);}));
+        li.appendChild(tools);
+      }
+      listEl.appendChild(li);
+    });
+    renderProgress();
+    renderTrash();
+  }
+
+  function buildEditor(t){
+    var box=el('div','edit');
+    var inp=el('input'); inp.type='text'; inp.value=t.text; inp.maxLength=200; inp.enterKeyHint='done';
+    var row=el('div','row');
+    var lab=el('label','chk');
+    var cb=el('input'); cb.type='checkbox'; cb.checked=!!t.daily;
+    lab.appendChild(cb); lab.appendChild(document.createTextNode(' 🔄 Ежедневная'));
+    var ok=el('button','btn primary','Сохранить'); ok.type='button';
+    var no=el('button','btn','Отмена'); no.type='button'; no.style.fontSize='15px';
+    function commit(){
+      var v=inp.value.trim();
+      if(v){t.text=v;}
+      t.daily=cb.checked; editingId=null; save(); render();
+    }
+    ok.addEventListener('click',commit);
+    no.addEventListener('click',function(){editingId=null;render();});
+    inp.addEventListener('keydown',function(e){
+      if(e.key==='Enter'){e.preventDefault();commit();}
+      if(e.key==='Escape'){editingId=null;render();}
+    });
+    row.appendChild(lab);row.appendChild(ok);row.appendChild(no);
+    box.appendChild(inp);box.appendChild(row);
+    setTimeout(function(){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);},0);
+    return box;
+  }
+
+  function renderProgress(){
+    var total=state.tasks.length, done=state.tasks.filter(function(t){return t.done;}).length;
+    var pct=total?Math.round(done/total*100):0;
+    $('ptext').textContent='Выполнено: '+done+' из '+total+' ('+pct+'%)';
+    $('pbar').style.width=pct+'%';
+  }
+
+  function renderTrash(){
+    var box=$('trashBox'), cont=$('trashList');
+    box.hidden=!state.trash.length;
+    $('trashSummary').textContent='🗑 Недавно удалённые ('+state.trash.length+')';
+    cont.innerHTML='';
+    state.trash.forEach(function(t){
+      var r=el('div','trash-item');
+      r.appendChild(el('span',null,t.text));
+      var b=el('button','link','Вернуть'); b.type='button';
+      b.addEventListener('click',function(){restore(t.id);});
+      r.appendChild(b); cont.appendChild(r);
+    });
+    if(state.trash.length){
+      var a=el('div','trash-actions');
+      var c=el('button','link','Очистить корзину'); c.type='button';
+      c.style.color='var(--danger)';
+      c.addEventListener('click',function(){
+        if(confirm('Удалить все задачи из корзины навсегда?')){state.trash=[];save();renderTrash();}
+      });
+      a.appendChild(c); cont.appendChild(a);
+    }
+  }
+
+  function toggle(id){var i=idx(id);if(i<0)return;state.tasks[i].done=!state.tasks[i].done;save();render();}
+  function move(id,d){
+    var i=idx(id),j=i+d; if(i<0||j<0||j>=state.tasks.length)return;
+    var t=state.tasks.splice(i,1)[0]; state.tasks.splice(j,0,t); save(); render();
+  }
+  function startEdit(id){editingId=id;render();}
+  function remove(id){
+    var i=idx(id); if(i<0)return;
+    var t=state.tasks.splice(i,1)[0];
+    t.deletedFrom=i;
+    state.trash.unshift(t);
+    if(state.trash.length>30)state.trash.length=30;
+    lastDeleted=t.id;
+    if(editingId===id)editingId=null;
+    save();render();
+    showToast('Задача удалена');
+  }
+  function restore(id){
+    var k=-1;for(var i=0;i<state.trash.length;i++)if(state.trash[i].id===id){k=i;break;}
+    if(k<0)return;
+    var t=state.trash.splice(k,1)[0];
+    var pos=typeof t.deletedFrom==='number'?Math.min(t.deletedFrom,state.tasks.length):state.tasks.length;
+    delete t.deletedFrom;
+    state.tasks.splice(pos,0,t);
+    save();render();
+  }
+
+  function showToast(msg){
+    $('toastMsg').textContent=msg;
+    $('toast').classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(hideToast,6000);
+  }
+  function hideToast(){$('toast').classList.remove('show');}
+  $('toastUndo').addEventListener('click',function(){
+    if(lastDeleted){restore(lastDeleted);lastDeleted=null;}
+    hideToast();
+  });
+
+  $('addForm').addEventListener('submit',function(e){
+    e.preventDefault();
+    var inp=$('newText'), v=inp.value.trim();
+    if(!v){inp.focus();return;}
+    state.tasks.push({id:uid(),text:v,done:false,daily:$('newDaily').checked});
+    inp.value='';$('newDaily').checked=false;
+    save();render();inp.focus();
+  });
+
+  var h1=document.querySelector('h1'); var h1t=h1.textContent; h1.textContent=''; h1.appendChild(dancing(h1t));
+
+  var modeBtn=$('editModeBtn'), addForm=$('addForm');
+  modeBtn.addEventListener('click',function(){
+    var open=addForm.hidden;
+    addForm.hidden=!open;
+    modeBtn.classList.toggle('on',open);
+    modeBtn.setAttribute('aria-expanded',open);
+    modeBtn.textContent=open?'✓ Готово':'✎ Редактировать';
+    if(open)$('newText').focus();
+  });
+
+  load();render();
+})();
+</script>
+</body>
+</html>
