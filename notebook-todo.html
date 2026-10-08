@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#fbf6e6">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Задачи">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Блокнот задач</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,7 +34,9 @@
     background-color:var(--paper);
     background-image:
       linear-gradient(to right, transparent 46px, var(--margin) 46px, var(--margin) 48px, transparent 48px),
-      repeating-linear-gradient(to bottom, transparent 0, transparent calc(var(--row) - 1px), var(--line) calc(var(--row) - 1px), var(--line) var(--row));
+      linear-gradient(to bottom, transparent 23px, var(--line) 23px),
+      linear-gradient(to right, transparent 23px, var(--line) 23px);
+    background-size:auto,24px 24px,24px 24px;
     background-attachment:local;
     min-height:100vh;
     padding:env(safe-area-inset-top) 0 calc(80px + env(safe-area-inset-bottom));
@@ -350,6 +359,10 @@
     modeBtn.textContent=open?'✓ Готово':'✎ Редактировать';
     if(open)$('newText').focus();
   });
+
+  if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
+    window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});
+  }
 
   load();render();
 })();
